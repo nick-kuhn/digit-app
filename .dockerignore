@@ -1,0 +1,41 @@
+# Python virtual environment
+venv/
+*.venv/
+
+# Git directory
+.git/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment variables file
+.env
+
+# Streamlit secrets (if managed outside Docker and injected as env vars)
+.streamlit/secrets.toml
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# IDE and editor specific files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Large data files or datasets not needed in the image
+# data/
+# *.csv
+# *.pkl
+# *.pth (if model is downloaded/mounted differently in production)
+
+# Test files (if not needed in production image)
+# tests/
+
+# Docker files themselves (if they are in a subdirectory that gets copied)
+# Dockerfile
+# docker-compose.yml 
