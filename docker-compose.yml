@@ -1,0 +1,48 @@
+version: '3.8' # Specify Compose file version
+
+services:
+  app: # Service name for the Streamlit/PyTorch application
+    build: . # Build the image from the Dockerfile in the current directory
+    container_name: mnist_app_frontend # Optional: specific container name
+    ports:
+      - "8501:8501" # Map host port 8501 to container port 8501
+    environment:
+      # Pass database connection details as environment variables
+      # The app container will connect to the 'db' service name
+      POSTGRES_USER: ${POSTGRES_USER} # Read from .env file
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} # Read from .env file
+      POSTGRES_DB: ${POSTGRES_DB} # Read from .env file
+      POSTGRES_HOST: db # Use the service name 'db' as the hostname
+      POSTGRES_PORT: 5432
+    # volumes: # If no volumes are defined, this key should be commented or removed
+       # Optional: Mount local code for development hot-reloading
+       # Remove or comment out for production deployment where code is baked into the image
+       # - ./streamlit_app.py:/app/streamlit_app.py # Example for a single file
+       # - ./database.py:/app/database.py
+    depends_on:
+      db: # Ensure 'db' service is started before 'app'
+        condition: service_healthy # Optional: Wait for db to be healthy
+    restart: unless-stopped # Restart policy
+
+  db: # Service name for the PostgreSQL database
+    image: postgres:14 # Use official PostgreSQL image (specify version)
+    container_name: mnist_app_database # Optional: specific container name
+    environment:
+      # These variables are used by the official postgres image to initialize the DB
+      POSTGRES_USER: ${POSTGRES_USER} # Read from .env file
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} # Read from .env file
+      POSTGRES_DB: ${POSTGRES_DB} # Read from .env file
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Mount named volume for data persistence
+    # ports: # If no ports are defined, this key should be commented or removed
+      # Do NOT expose the database port to the host in production unless necessary
+      # - "5432:5432" # Only uncomment for local debugging if needed
+    healthcheck: # Check if Postgres is ready to accept connections
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always # Ensure database restarts if it fails
+
+volumes: # Define the named volume
+  postgres_data: {} 

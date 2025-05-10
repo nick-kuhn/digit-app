@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # Use an official Python runtime as a parent image
 FROM python:3.9-slim
 
@@ -10,8 +11,12 @@ WORKDIR /app
 # Copy the dependencies file first to leverage Docker cache
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies using a BuildKit cache mount.
+# This speeds up rebuilds by caching downloaded packages (like torch) 
+# across builds, even if the requirements.txt file changes slightly, 
+# preventing re-downloads if the package version itself is unchanged.
+# The --no-cache-dir flag is removed here to allow pip to use the mounted cache.
+RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
 
 # Copy the rest of the application code into the container
 COPY . .
