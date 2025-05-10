@@ -1,5 +1,5 @@
-Include:
-# A brief description of the project (MNIST digit recognizer with drawing canvas and DB logging).
+# MNIST digit recognizer with drawing canvas and DB logging
+Try me out [here](http://188.245.203.251/).
 # Prerequisites (Python version, PostgreSQL installed and running).
 # Setup instructions:
 - Clone repository.
