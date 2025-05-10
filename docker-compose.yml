@@ -1,4 +1,4 @@
-version: '3.8' # Specify Compose file version
+# Specify Compose file version
 
 services:
   app: # Service name for the Streamlit/PyTorch application
