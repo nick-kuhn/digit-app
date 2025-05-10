@@ -4,12 +4,13 @@ from torch.utils.data import DataLoader
 from torchvision import transforms # Added for Normalize transform if not implicitly in test_data
 
 # Assuming model.py and mnist.py are in the same directory or accessible in PYTHONPATH
-from model import Net
-from mnist import test_data
+from app.model import Net
+from .mnist import test_data
 
-def get_model_accuracy(model_path='mnist_cnn.pth', batch_size=64):
+#Should always be run from project directory
+def evaluate_model(model_path='app/mnist_cnn.pth', data_root='./data'):
     """
-    Loads a trained model, evaluates it on the MNIST test dataset, and prints the accuracy.
+    Evaluates the PyTorch model on the MNIST test set.
     """
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using {device} device")
@@ -78,7 +79,7 @@ def get_model_accuracy(model_path='mnist_cnn.pth', batch_size=64):
         transform=transform
     )
 
-    test_dataloader = DataLoader(mnist_test_dataset, batch_size=batch_size)
+    test_dataloader = DataLoader(mnist_test_dataset, batch_size=64)
 
     loss_fn = nn.CrossEntropyLoss() # Or nn.NLLLoss() if model output is log_softmax
     # The model.py uses F.log_softmax, so NLLLoss is appropriate.
@@ -107,4 +108,4 @@ def get_model_accuracy(model_path='mnist_cnn.pth', batch_size=64):
     return accuracy, test_loss
 
 if __name__ == '__main__':
-    get_model_accuracy()
+    evaluate_model()

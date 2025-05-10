@@ -1,9 +1,35 @@
-# Ignore Streamlit secrets
-.streamlit/secrets.toml
+# Python Bytecode and Cache
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
-# Ignore environment files
-*.env
+# Virtual Environments
+venv/
+*.venv/
 
-# Ignore Python cache and compiled files
-__pycache__/
-*.pyc 
+# Environment Variables File
+.env # Covers .env at root
+*.env # Covers any .env file if you use more specific ones elsewhere
+
+# Streamlit Secrets (actual secrets, not the example)
+# This specifically targets the secrets file within the app/.streamlit directory
+app/.streamlit/secrets.toml
+
+# Local Data (e.g., downloaded MNIST dataset)
+data/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# IDE and editor specific files (optional, but common)
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Build artifacts (if any, e.g., from other tools)
+build/
+dist/
+*.egg-info/ 

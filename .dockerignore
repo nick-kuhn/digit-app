@@ -1,25 +1,24 @@
+# Git and OS specific
+.git/
+.DS_Store
+Thumbs.db
+
 # Python virtual environment
 venv/
 *.venv/
 
-# Git directory
-.git/
-
 # Python cache
 __pycache__/
+**/__pycache__/ # Ensure sub-directory caches are also ignored
 *.pyc
 *.pyo
 *.pyd
 
-# Environment variables file
+# Environment variables file (actual secrets, not example)
 .env
 
-# Streamlit secrets (if managed outside Docker and injected as env vars)
-.streamlit/secrets.toml
-
-# OS-specific files
-.DS_Store
-Thumbs.db
+# Streamlit secrets file (actual secrets, not example, from within app/.streamlit)
+app/.streamlit/secrets.toml
 
 # IDE and editor specific files
 .vscode/
@@ -27,15 +26,14 @@ Thumbs.db
 *.sublime-project
 *.sublime-workspace
 
-# Large data files or datasets not needed in the image
-data/
-# *.csv
-# *.pkl
-# *.pth (if model is downloaded/mounted differently in production)
+# Directories not needed in the final image
+data/      # For local MNIST dataset downloads
+scripts/   # Training, evaluation scripts
 
-# Test files (if not needed in production image)
-# tests/
-
-# Docker files themselves (if they are in a subdirectory that gets copied)
-# Dockerfile
-# docker-compose.yml 
+# Other project files not needed for the runtime image
+README.md
+.gitignore
+# .dockerignore # Usually not needed to ignore itself
+docker-compose.yml
+# requirements.txt # This IS needed for the build, so not ignored here
+# Dockerfile       # Not needed in the image itself 

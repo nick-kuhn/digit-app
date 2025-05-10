@@ -1,12 +1,21 @@
+import sys
+import os
+
+# This is to ensure that when streamlit_app.py is run directly (e.g., by Streamlit CLI),
+# it can find its sibling modules (model.py, database.py) in the 'app' directory.
+# This is primarily for local development. Docker execution context should be fine.
+if __name__ == '__main__' and os.path.dirname(__file__) not in sys.path:
+    sys.path.insert(0, os.path.dirname(__file__))
+
 import streamlit as st
 from streamlit_drawable_canvas import st_canvas
 import numpy as np
 import torch
-from model import Net
+from model import Net # Changed from relative
 from PIL import Image, ImageOps
 import torchvision.transforms as transforms
 import os # Import os for environment variables
-from database import get_db_connection, create_table, log_prediction_db # Import DB functions
+from database import get_db_connection, create_table, log_prediction_db # Changed from relative
 
 # --- Initialize Database ---
 # Ensure the table exists when the app starts
@@ -14,9 +23,15 @@ create_table()
 
 #Load and instantiate the model
 @st.cache_resource
-def load_pytorch_model(model_path='mnist_cnn.pth'):
+def load_pytorch_model(model_filename='mnist_cnn.pth'): # Changed arg name for clarity
+    # Construct path relative to this script file (streamlit_app.py)
+    script_dir = os.path.dirname(__file__)
+    model_path_abs = os.path.join(script_dir, model_filename)
+
+    # print(f"Attempting to load model from: {model_path_abs}") # Debug line
+
     model = Net() # Instantiate the model structure
-    model.load_state_dict(torch.load(model_path))
+    model.load_state_dict(torch.load(model_path_abs)) # Use absolute path
     model.eval() # Set to evaluation mode
     return model
 

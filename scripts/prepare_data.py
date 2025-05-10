@@ -3,7 +3,7 @@ import torch
 from torch.utils.data import Dataset
 import pandas as pd
 from torchvision.io import read_image
-from mnist import training_data, test_data, plt
+from .mnist import training_data, test_data, plt
 from torch.utils.data import DataLoader
 from torchvision.transforms import ToTensor, Lambda
 
@@ -36,9 +36,9 @@ print(f"Feature batch shape: {train_features.size()}")
 print(f"Labels batch shape: {train_labels.size()}")
 img = train_features[0].squeeze()
 label = train_labels[0]
-plt.imshow(img, cmap="gray")
-plt.show()
-print(f"Label: {label}")
+# plt.imshow(img, cmap="gray")
+# plt.show()
+# print(f"Label: {label}")
 
 target_transform = Lambda(lambda y: torch.zeros(
     10, dtype=torch.float).scatter_(dim=0, index=torch.tensor(y), value=1))
