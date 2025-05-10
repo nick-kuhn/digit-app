@@ -20,6 +20,25 @@ def load_pytorch_model(model_path='mnist_cnn.pth'):
     model.eval() # Set to evaluation mode
     return model
 
+# --- Load the model (globally) ---
+model = load_pytorch_model()
+
+# --- Session State Initialization ---
+if "true_label" not in st.session_state:
+    st.session_state.true_label = None
+if "predicted_digit" not in st.session_state:
+    st.session_state.predicted_digit = None
+if "confidence" not in st.session_state:
+    st.session_state.confidence = None
+if "show_prediction_results" not in st.session_state:
+    st.session_state.show_prediction_results = False
+if "canvas_key_suffix" not in st.session_state: # Add new key for canvas
+    st.session_state.canvas_key_suffix = 0
+if "prediction_history" not in st.session_state: # For storing prediction history
+    st.session_state.prediction_history = []
+if "last_true_label_for_display" not in st.session_state: # To show true label with current prediction
+    st.session_state.last_true_label_for_display = None
+
 # Placeholder for image preprocessing function
 def preprocess_image(image_data):
     # Input: NumPy array (HxWx4 RGBA)
@@ -64,7 +83,7 @@ def preprocess_image(image_data):
         return None
 
 # Placeholder for prediction function
-def predict_digit(processed_tensor):
+def predict_digit(processed_tensor): # model is accessed from global scope
     # Ensure the model is loaded (it's loaded globally and cached)
     if model is None:
         st.error("Model not loaded!")
@@ -85,27 +104,21 @@ def predict_digit(processed_tensor):
             probabilities = torch.softmax(output, dim=1)
             
             # Get the confidence (max probability)
-            confidence = probabilities.max().item()
+            confidence_val = probabilities.max().item() # Renamed to avoid conflict
             
             # Get the prediction (index of the highest probability)
-            predicted_digit = probabilities.argmax(dim=1).item()
+            predicted_digit_val = probabilities.argmax(dim=1).item() # Renamed
 
-            return predicted_digit, confidence
+            return predicted_digit_val, confidence_val
 
         except Exception as e:
             st.error(f"Error during prediction: {e}")
             return None, None
 
-# Placeholder for logging function - REMOVED (using log_prediction_db now)
-# def log_prediction(image_data, predicted_digit, confidence, true_label):
-#     # TODO: Implement logging logic (e.g., save to file/database)
-#     st.write(f"Logging Step (Placeholder): Image Shape {image_data.shape if image_data is not None else 'None'}, Predicted: {predicted_digit}, Confidence: {confidence:.2f}, True Label: {true_label}")
-#     pass
-
 # --- Streamlit App ---
 
 st.title("MNIST Digit Recognizer")
-st.header("Draw a digit (0-9) below")
+st.header("Draw a digit (0-9) below.")
 
 # --- Canvas Configuration ---
 # Define canvas parameters based on requirements
@@ -116,63 +129,103 @@ drawing_mode = "freedraw"
 canvas_height = 280 # Make canvas larger for easier drawing
 canvas_width = 280
 
-# --- Drawing Canvas ---
-# Create a canvas component
-canvas_result = st_canvas(
-    fill_color="rgba(255, 165, 0, 0.3)",  # Fixed fill color with some opacity
-    stroke_width=stroke_width,
-    stroke_color=stroke_color,
-    background_color=background_color,
-    update_streamlit=True, # Update automatically on drawing
-    height=canvas_height,
-    width=canvas_width,
-    drawing_mode=drawing_mode,
-    key="canvas",
-)
+# --- Layout for Canvas and True Label ---
+col1, col2 = st.columns([2, 1]) # Assign more space to the canvas
 
-# --- Prediction Logic ---
-# Add a button to trigger prediction
-predict_button = st.button("Predict Digit")
+with col1:
+    # --- Drawing Canvas ---
+    # Create a canvas component
+    canvas_result = st_canvas(
+        fill_color="rgba(255, 165, 0, 0.3)",  # Fixed fill color with some opacity
+        stroke_width=stroke_width,
+        stroke_color=stroke_color,
+        background_color=background_color,
+        update_streamlit=True, # Update automatically on drawing
+        height=canvas_height,
+        width=canvas_width,
+        drawing_mode=drawing_mode,
+        key=f"canvas_{st.session_state.canvas_key_suffix}", # Use dynamic key
+    )
 
-# Input for the "True Label"
-true_label = st.number_input("Enter True Label (0-9):", min_value=0, max_value=9, step=1, key="true_label")
+with col2:
+    # Input for the "True Label"
+    # User input directly updates st.session_state.true_label due to the key
+    st.number_input("Enter True Label (0-9):", min_value=0, max_value=9, step=1, key="true_label")
 
-# --- Load the model ---
-model = load_pytorch_model()
-
-if predict_button:
+# --- Prediction Logic (Callback Function) ---
+def handle_prediction_and_reset():
+    # Access canvas_result from the outer scope (defined before this button)
+    # Access model from the global scope
+    
     if canvas_result.image_data is not None:
         # 1. Retrieve Image Data
         image_data_rgba = canvas_result.image_data # Shape (height, width, 4) - RGBA
 
         # 2. Preprocess the image
-        # Note: Preprocessing needs to convert RGBA to grayscale and resize to MNIST format (28x28)
         processed_image = preprocess_image(image_data_rgba)
 
         if processed_image is not None:
             # 3. Perform Inference
-            predicted_digit, confidence = predict_digit(processed_image)
+            predicted_digit_val, confidence_val = predict_digit(processed_image)
 
-            # 4. Display Prediction (only if prediction was successful)
-            if predicted_digit is not None and confidence is not None:
-                st.subheader("Prediction Result")
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.metric(label="Predicted Digit", value=str(predicted_digit))
-                with col2:
-                    st.metric(label="Confidence", value=f"{confidence:.2f}")
+            # 4. Store results in session state for display
+            if predicted_digit_val is not None and confidence_val is not None:
+                st.session_state.predicted_digit = predicted_digit_val
+                st.session_state.confidence = confidence_val
+                st.session_state.show_prediction_results = True
+                
+                current_true_label_for_logging_and_display = st.session_state.true_label
+                st.session_state.last_true_label_for_display = current_true_label_for_logging_and_display
 
-                # 5. Log the result (only if prediction was successful)
-                # Using the original RGBA data for potential future use/visualization
-                # Calls the new database logging function
-                log_prediction_db(predicted_digit, confidence, true_label, image_data_rgba)
-            # else: prediction error message is handled within predict_digit
+                # 5. Log the result ONLY if true_label was provided
+                if current_true_label_for_logging_and_display is not None:
+                    log_prediction_db(predicted_digit_val, confidence_val, current_true_label_for_logging_and_display, image_data_rgba)
 
+                # 6. Add to prediction history
+                history_entry = {
+                    "Predicted Digit": predicted_digit_val,
+                    "Confidence": f"{confidence_val:.2f}",
+                    "True Label": current_true_label_for_logging_and_display if current_true_label_for_logging_and_display is not None else ""
+                }
+                st.session_state.prediction_history.insert(0, history_entry) # Insert at beginning for newest first
+
+                # Reset true_label in session state after processing
+                st.session_state.true_label = None 
+            else:
+                # Prediction error (message handled within predict_digit)
+                st.session_state.show_prediction_results = False
+                st.warning("Prediction failed.")
         else:
             st.warning("Could not preprocess the image.")
-
+            st.session_state.show_prediction_results = False
     else:
         st.warning("Please draw a digit on the canvas first.")
+        st.session_state.show_prediction_results = False
+    
+    # Increment canvas key suffix to force re-render (clear canvas)
+    st.session_state.canvas_key_suffix += 1
+
+# Add a button to trigger prediction, using the callback
+predict_button = st.button("Predict Digit", on_click=handle_prediction_and_reset)
+
+# --- Display Prediction Results (based on session state) ---
+if st.session_state.show_prediction_results:
+    if st.session_state.predicted_digit is not None and st.session_state.confidence is not None:
+        st.subheader("Prediction Result")
+        res_col1, res_col2, res_col3 = st.columns(3)
+        with res_col1:
+            st.metric(label="Predicted Digit", value=str(st.session_state.predicted_digit))
+        with res_col2:
+            st.metric(label="Confidence", value=f"{st.session_state.confidence:.2f}")
+        with res_col3:
+            true_label_to_display = st.session_state.last_true_label_for_display
+            st.metric(label="True Label", value=str(true_label_to_display) if true_label_to_display is not None else "N/A")
+    # Or, let it persist until the next button click naturally updates it.
+
+# --- Display Prediction History ---
+if st.session_state.prediction_history:
+    st.subheader("Prediction History")
+    st.dataframe(st.session_state.prediction_history)
 
 #st.write("Note: Preprocessing, prediction, and logging are currently placeholders.")
 
