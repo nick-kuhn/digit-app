@@ -28,7 +28,7 @@ Thumbs.db
 *.sublime-workspace
 
 # Large data files or datasets not needed in the image
-# data/
+data/
 # *.csv
 # *.pkl
 # *.pth (if model is downloaded/mounted differently in production)
